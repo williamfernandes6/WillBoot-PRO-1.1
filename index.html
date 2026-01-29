@@ -3,116 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PREDITOR IA PREMIUM</title>
+    <title>IA PREDITOR - ELEPHANTBET</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body { 
-            background: #0b0e11; 
-            color: white; 
-            font-family: 'Segoe UI', sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            margin: 0; 
-            text-align: center;
-        }
-        
-        .container {
-            width: 90%;
-            max-width: 400px;
-            background: #1a1d21;
-            padding: 30px;
-            border-radius: 20px;
-            border: 2px solid #2a2e38;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-        }
-
-        .signal-box {
-            margin: 20px 0;
-            padding: 25px;
-            border-radius: 15px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid #333;
-        }
-
-        .status { font-size: 1.6rem; font-weight: bold; text-transform: uppercase; }
-        .details { color: #848689; font-size: 0.9rem; margin-top: 10px; }
-
-        .btn-play {
-            display: block;
-            background: #d9185c;
-            color: white;
-            text-decoration: none;
-            padding: 18px;
-            border-radius: 12px;
-            font-weight: bold;
-            margin-top: 25px;
-            box-shadow: 0 5px 15px rgba(217, 24, 92, 0.3);
-            font-size: 1.1rem;
-        }
-
-        /* Cores de Alerta */
-        .rosa { color: #ff007a !important; text-shadow: 0 0 15px rgba(255,0,122,0.6); }
-        .roxo { color: #a020f0 !important; }
-        .azul { color: #007aff !important; }
-
-        .loader { width: 100%; height: 5px; background: #333; margin-top: 20px; border-radius: 10px; overflow: hidden; }
-        .fill { height: 100%; width: 0%; background: #d9185c; transition: 1s ease; }
+        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        .container { width: 90%; max-width: 400px; background: #1a1d21; padding: 30px; border-radius: 20px; border: 2px solid #2a2e38; }
+        .status { font-size: 1.6rem; font-weight: bold; margin-bottom: 10px; }
+        .rosa { color: #ff007a; }
+        .btn-play { display: block; background: #d9185c; color: white; text-decoration: none; padding: 18px; border-radius: 12px; font-weight: bold; margin-top: 25px; }
+        .warning { font-size: 0.7rem; color: #ff9800; margin-top: 15px; }
     </style>
 </head>
 <body>
-
-    <div id="card" class="container">
-        <h2 style="font-size: 0.8rem; color: #555; letter-spacing: 3px; margin-bottom: 10px;">IA PREDITIVA ATIVA</h2>
+    <div class="container">
+        <div id="status" class="status">SINCRO...</div>
+        <div id="details" style="color: #848689;">Conectando ao Render (Aguarde 50s)</div>
         
-        <div class="signal-box">
-            <div id="status" class="status">SINCRO...</div>
-            <div id="strategy" class="details">A ligar ao Render</div>
-            <div class="loader"><div id="bar" class="fill"></div></div>
-        </div>
-
-        <a href="https://m.elephantbet.co.ao/pt/game/aviator" target="_blank" class="btn-play">JOGAR NA ELEPHANTBET</a>
+        <a href="https://www.elephantbet.co.ao/" target="_blank" class="btn-play">ENTRAR NA ELEPHANTBET</a>
         
-        <p style="font-size: 0.65rem; color: #444; margin-top: 20px;">
-            O servidor gratuito pode demorar 50s a processar a primeira vela.
-        </p>
+        <p class="warning">Aviso: O sinal demora a aparecer porque o servidor gratuito precisa "acordar" após 50s de espera.</p>
     </div>
 
-    <audio id="alert-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+    <audio id="alert" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
     <script>
         const socket = io("https://ia-backend-aviator.onrender.com");
-        const audio = document.getElementById("alert-sound");
+        const audio = document.getElementById("alert");
 
         socket.on("connect", () => {
-            document.getElementById("status").innerText = "ONLINE";
-            document.getElementById("strategy").innerText = "Aguardando sinal da ElephantBet";
+            document.getElementById("status").innerText = "SISTEMA ONLINE";
+            document.getElementById("details").innerText = "Aguardando próxima vela...";
         });
 
         socket.on("receber_sinal", (dados) => {
-            const statusDiv = document.getElementById("status");
-            const bar = document.getElementById("bar");
+            const status = document.getElementById("status");
+            status.innerText = dados.sinal;
+            status.className = "status " + dados.cor;
+            document.getElementById("details").innerText = "Confiança: " + dados.confianca;
             
-            statusDiv.innerText = dados.sinal;
-            statusDiv.className = "status " + dados.cor;
-            document.getElementById("strategy").innerText = dados.estrategia || "Analisando Gráfico";
-            
-            const conf = parseInt(dados.confianca) || 0;
-            bar.style.width = conf + "%";
-
-            // Se for sinal de Vela Rosa ou Confiança > 90%
-            if(dados.cor === "rosa" || conf >= 90) {
-                audio.play(); // Toca o som de alerta
-                window.navigator.vibrate([300, 100, 300]); // Vibração forte no telemóvel
+            if(dados.cor === "rosa") {
+                audio.play();
+                window.navigator.vibrate([300, 100, 300]);
             }
-        });
-
-        socket.on("connect_error", () => {
-            document.getElementById("status").innerText = "A ACORDAR...";
-            document.getElementById("strategy").innerText = "O Render está a ligar a instância Livre.";
         });
     </script>
 </body>

@@ -3,82 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Protocolo 2.0 - IA Real-Time</title>
+    <title>PROTOCOLO 2.0 - IA SINAIS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body { background-color: #050505; color: #fff; font-family: 'Inter', sans-serif; }
-        .neon-border { border: 1px solid rgba(220, 38, 38, 0.3); box-shadow: 0 0 15px rgba(220, 38, 38, 0.1); }
-        .status-pink { color: #ff007f; text-shadow: 0 0 10px #ff007f; }
-        .status-red { color: #ff4d4d; text-shadow: 0 0 10px #ff4d4d; }
+        body { background-color: #050505; color: white; }
+        .glow { border: 1px solid rgba(255, 0, 0, 0.2); box-shadow: 0 0 20px rgba(255, 0, 0, 0.05); }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-6">
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div class="w-full max-w-4xl text-center mb-10">
-        <h1 class="text-4xl font-black uppercase tracking-widest text-white border-b-2 border-red-600 inline-block px-4">Protocolo Técnico v2.0</h1>
-        <p class="text-gray-500 text-xs mt-4">Motor de Inteligência de Alavancagem - Moeda: AOA</p>
-    </div>
+    <div class="w-full max-w-4xl text-center">
+        <h1 class="text-5xl font-black italic tracking-tighter mb-2 italic">PROTOCOLO <span class="text-red-600">2.0</span></h1>
+        <p class="text-gray-600 text-[10px] tracking-[0.4em] uppercase mb-10 font-bold">Inteligência Operacional • Kwanza (AOA)</p>
 
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 w-full max-w-6xl">
-        
-        <div class="md:col-span-7 bg-[#0a0a0a] p-6 rounded-2xl neon-border">
-            <h2 class="text-xs font-bold text-gray-500 uppercase mb-4">Entrada de Dados do Sistema</h2>
-            <textarea id="dados" class="w-full h-64 bg-black border border-gray-800 rounded-xl p-4 text-red-500 font-mono text-sm focus:outline-none focus:border-red-600" placeholder="Insira os multiplicadores ou logs aqui..."></textarea>
-            <button onclick="enviar()" class="w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-red-900/20">EXECUTAR ANÁLISE IA</button>
-        </div>
-
-        <div class="md:col-span-5 bg-[#0a0a0a] border-l-4 border-red-600 p-6 rounded-r-2xl flex flex-col justify-between">
-            <div>
-                <div class="flex items-center gap-2 mb-6">
-                    <span class="w-2 h-2 bg-red-600 rounded-full animate-ping"></span>
-                    <h3 class="font-black uppercase italic text-lg">IA Real-Time Insights</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            <div class="bg-[#0a0a0a] p-6 rounded-3xl glow space-y-4">
+                <textarea id="logs" class="w-full h-32 bg-black border border-gray-800 rounded-2xl p-4 text-sm focus:border-red-600 outline-none" placeholder="Cole os logs do gráfico..."></textarea>
+                
+                <div class="border-2 border-dashed border-gray-800 rounded-2xl p-4 text-center">
+                    <input type="file" id="foto" class="hidden" onchange="analisarImagem()">
+                    <label for="foto" class="cursor-pointer text-xs text-gray-500 uppercase font-bold">Subir Print do Gráfico</label>
                 </div>
 
-                <div id="resultado" class="space-y-6">
-                    <div>
-                        <span class="text-[10px] text-gray-600 font-bold uppercase">Análise Atual</span>
-                        <p id="txt-analise" class="text-gray-300 text-sm mt-1">Aguardando processamento...</p>
-                    </div>
-                    
-                    <div class="p-4 bg-white/5 rounded-lg">
-                        <span class="text-[10px] text-red-500 font-bold uppercase">Estratégia Recomendada</span>
-                        <p id="txt-estrategia" class="text-white text-base font-bold mt-1">--</p>
-                    </div>
-                </div>
+                <button onclick="processar()" class="w-full bg-red-600 hover:bg-red-700 py-4 rounded-2xl font-black uppercase tracking-widest transition-all">Gerar Sinal</button>
             </div>
 
-            <div id="alerta-box" class="mt-6 p-3 border border-gray-800 rounded text-center">
-                <span id="txt-alerta" class="text-[10px] font-bold uppercase tracking-widest text-gray-500 italic">Sistema Standby</span>
+            <div class="bg-white/5 p-6 rounded-3xl border-l-4 border-red-600 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-red-600 font-bold uppercase text-[10px] mb-4">Insights do Manual</h3>
+                    <div id="box-sinal" class="space-y-4">
+                        <p id="txt-analise" class="text-sm text-gray-400">Aguardando dados...</p>
+                        <p id="txt-dica" class="text-xl font-bold leading-tight">--</p>
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-white/5 text-[9px] text-gray-700 font-mono flex justify-between">
+                    <span>STATUS: ONLINE</span>
+                    <span>MOEDA: AOA</span>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // SUBSTITUA PELA SUA URL DO RENDER
-        const socket = io('https://seu-backend-no-render.onrender.com');
+        // COLOQUE O SEU LINK DO RENDER AQUI
+        const URL_BACKEND = 'https://O-TEU-APP.onrender.com'; 
+        const socket = io(URL_BACKEND);
 
-        function enviar() {
-            const input = document.getElementById('dados').value;
-            if(input) {
-                document.getElementById('txt-analise').innerText = "Processando Manual 2.0...";
-                socket.emit('input_mercado', input);
-            }
+        async function analisarImagem() {
+            const file = document.getElementById('foto').files[0];
+            const formData = new FormData();
+            formData.append('print', file);
+
+            document.getElementById('txt-analise').innerText = "IA lendo imagem...";
+            
+            const res = await fetch(`${URL_BACKEND}/analisar-print`, { method: 'POST', body: formData });
+            const data = await res.json();
+            document.getElementById('txt-analise').innerText = data.resultado;
         }
 
-        socket.on('output_ia', (data) => {
-            document.getElementById('txt-analise').innerText = data.analise;
-            document.getElementById('txt-estrategia').innerText = data.estrategia;
-            const alerta = document.getElementById('txt-alerta');
-            alerta.innerText = data.alerta;
+        function processar() {
+            const val = document.getElementById('logs').value;
+            if(val) socket.emit('enviar_dados', val);
+        }
 
-            if(data.cor === 'pink') {
-                alerta.className = "text-[10px] font-bold uppercase status-pink";
-            } else if(data.cor === 'red') {
-                alerta.className = "text-[10px] font-bold uppercase status-red";
-            } else {
-                alerta.className = "text-[10px] font-bold uppercase text-white";
-            }
+        socket.on('receber_estrategia', (data) => {
+            document.getElementById('txt-analise').innerText = data.estrategia;
+            document.getElementById('txt-dica').innerText = data.dica;
         });
     </script>
 </body>

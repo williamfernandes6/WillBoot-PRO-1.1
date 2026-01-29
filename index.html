@@ -3,69 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA PREDITOR - AUTO CAPTURE</title>
+    <title>PREDITOR IA - ELEPHANTBET</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; font-family: sans-serif; }
-        
-        /* Área do Jogo */
-        #game-container { height: 70%; width: 100%; border: none; }
-        
-        /* Painel da IA */
-        #ia-panel { 
-            height: 30%; width: 100%; background: #1a1d21; 
-            border-top: 2px solid #d9185c; display: flex; 
-            flex-direction: column; align-items: center; justify-content: center;
-            color: white; text-align: center;
+        /* Reset de tela cheia */
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* Área do Jogo (ElephantBet) */
+        #game-container {
+            height: 70%; /* Ocupa 70% da tela */
+            width: 100%;
+            border: none;
         }
 
-        .signal { font-size: 1.4rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
-        .details { font-size: 0.9rem; color: #848689; }
-        .rosa { color: #ff007a; }
-        .roxo { color: #a020f0; }
-        .azul { color: #007aff; }
+        /* Painel de Sinais IA (Fixo em baixo) */
+        #ia-panel {
+            height: 30%; /* Ocupa 30% da tela */
+            width: 100%;
+            background: #181a21;
+            border-top: 3px solid #d9185c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 -10px 20px rgba(0,0,0,0.5);
+        }
+
+        .status { font-size: 1.3rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; transition: 0.3s; }
+        .strategy { font-size: 0.9rem; color: #848689; margin-bottom: 10px; }
+        
+        /* Cores de Alerta */
+        .rosa { color: #ff007a; text-shadow: 0 0 10px rgba(255,0,122,0.5); }
+        .roxo { color: #a020f0; text-shadow: 0 0 10px rgba(160,32,240,0.5); }
+        .azul { color: #007aff; text-shadow: 0 0 10px rgba(0,122,255,0.5); }
+
+        .conf-bar-bg { width: 80%; height: 6px; background: #2a2e38; border-radius: 10px; overflow: hidden; }
+        .conf-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #913dc2, #d9185c); transition: width 1s ease; }
     </style>
 </head>
 <body>
 
-    <iframe id="game-container" src="URL_DO_SEU_CASSINO_AQUI"></iframe>
+    <iframe id="game-container" src="https://www.elephantbet.co.ao"></iframe>
 
     <div id="ia-panel">
-        <div id="signal-text" class="signal">CONECTANDO À IA...</div>
-        <div id="strategy-text" class="details">Sincronizando com o Render</div>
-        <div id="conf-text" style="font-size: 0.7rem; margin-top: 10px; color: #555;">AGUARDANDO PRIMEIRA VELA...</div>
+        <div id="signal-text" class="status">CONECTANDO À IA...</div>
+        <div id="strategy-text" class="strategy">Aguardando dados do Render</div>
+        
+        <div class="conf-bar-bg">
+            <div id="conf-bar" class="conf-bar-fill"></div>
+        </div>
+        <div id="conf-val" style="font-size: 0.7rem; margin-top: 5px; color: #555;">Sincronizando...</div>
     </div>
 
     <script>
+        // CONEXÃO COM O SEU BACKEND NO RENDER
         const socket = io("https://ia-backend-aviator.onrender.com");
 
-        // ESCUTA O SINAL DO RENDER
+        socket.on("connect", () => {
+            document.getElementById("signal-text").innerText = "IA ONLINE";
+            document.getElementById("strategy-text").innerText = "Aguardando próxima vela";
+        });
+
         socket.on("receber_sinal", (dados) => {
             const signalText = document.getElementById("signal-text");
             const strategyText = document.getElementById("strategy-text");
-            
+            const confBar = document.getElementById("conf-bar");
+            const confVal = document.getElementById("conf-val");
+
+            // Atualiza Textos e Cores
             signalText.innerText = dados.sinal;
+            signalText.className = "status " + dados.cor;
             strategyText.innerText = dados.estrategia || dados.motivo;
             
-            // Troca cores conforme a IA
-            signalText.className = "signal " + dados.cor;
-            
-            if(dados.confianca === "95%") {
-                window.navigator.vibrate([200, 100, 200]); // Vibra o telemóvel no sinal forte
+            // Atualiza Barra de Confiança
+            const percent = dados.confianca ? dados.confianca.replace('%', '') : 0;
+            confBar.style.width = percent + "%";
+            confVal.innerText = `CONFIANÇA DA IA: ${percent}%`;
+
+            // Feedback tátil para sinais fortes (95%)
+            if(percent >= 95) {
+                window.navigator.vibrate([200, 100, 200]);
             }
         });
 
-        // TENTATIVA DE CAPTURA AUTOMÁTICA VIA POSTMESSAGE
-        // Nota: O cassino precisa estar no mesmo domínio ou permitir acesso
-        setInterval(() => {
-            try {
-                const gameFrame = document.getElementById('game-container').contentWindow;
-                // Este é o segredo: enviamos um comando para o frame ler os dados
-                // Se o cassino for protegido, o Scraper no Kiwi continua sendo o único método 100%
-            } catch (e) {
-                document.getElementById("conf-text").innerText = "MODO DE ESCUTA ATIVO (RENDER ONLINE)";
-            }
-        }, 3000);
+        socket.on("disconnect", () => {
+            document.getElementById("signal-text").innerText = "IA DESCONECTADA";
+            document.getElementById("signal-text").className = "status";
+        });
     </script>
 </body>
 </html>

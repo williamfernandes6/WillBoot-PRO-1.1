@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAINEL PREDITOR - AVIATOR IA</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f1116;
+            --card-bg: #181a21;
+            --accent-pink: #d9185c;
+            --accent-purple: #913dc2;
+            --accent-blue: #007aff;
+            --text-gray: #848689;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: white;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            color: var(--text-gray);
+            margin: 0;
+        }
+
+        .header span { color: var(--accent-pink); }
+
+        #main-container {
+            width: 90%;
+            max-width: 400px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid #2a2e38;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            text-align: center;
+            transition: all 0.5s ease;
+        }
+
+        /* Cores Dinâmicas do Card baseadas no Manual */
+        .card-rosa { border: 2px solid var(--accent-pink); box-shadow: 0 0 20px rgba(217, 24, 92, 0.3); }
+        .card-roxo { border: 2px solid var(--accent-purple); box-shadow: 0 0 20px rgba(145, 61, 194, 0.3); }
+        .card-azul { border: 2px solid var(--accent-blue); box-shadow: 0 0 20px rgba(0, 122, 255, 0.3); }
+
+        .signal-status {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .strategy-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .strategy-title { color: var(--text-gray); font-size: 0.8rem; margin-bottom: 5px; }
+        .strategy-name { font-weight: 600; font-size: 1rem; }
+
+        .targets {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+
+        .target-item { flex: 1; }
+        .target-label { font-size: 0.7rem; color: var(--text-gray); display: block; }
+        .target-val { font-weight: bold; font-size: 1.1rem; }
+
+        .confidence-bar {
+            width: 100%;
+            height: 6px;
+            background: #2a2e38;
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink));
+            transition: width 1s ease;
+        }
+
+        .history-container {
+            margin-top: 25px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .history-title { font-size: 0.75rem; color: var(--text-gray); margin-bottom: 10px; text-align: left; padding-left: 5px; }
+        
+        .history-list {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .history-item {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            background: #2a2e38;
+            white-space: nowrap;
+        }
+
+        .val-rosa { color: #ff007a; background: rgba(255, 0, 122, 0.1); }
+        .val-roxo { color: #a020f0; background: rgba(160, 32, 240, 0.1); }
+        .val-azul { color: #007aff; background: rgba(0, 122, 255, 0.1); }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>PREDITOR <span>IA</span> AVIATOR</h1>
+    </div>
+
+    <div id="main-container">
+        <div id="signal-text" class="signal-status">ANALISANDO...</div>
+        
+        <div class="strategy-box">
+            <div class="strategy-title">ESTRATÉGIA DETECTADA</div>
+            <div id="strategy-text" class="strategy-name">Aguardando Padrão</div>
+            
+            <div class="targets">
+                <div class="target-item">
+                    <span class="target-label">PROTEÇÃO</span>
+                    <span id="prot-val" class="target-val">---</span>
+                </div>
+                <div class="target-item">
+                    <span class="target-label">ALVO</span>
+                    <span id="alvo-val" class="target-val">---</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="conf-text" style="font-size: 0.8rem; color: var(--text-gray);">CONFIANÇA IA: 0%</div>
+        <div class="confidence-bar">
+            <div id="conf-bar" class="confidence-fill"></div>
+        </div>
+    </div>
+
+    <div class="history-container">
+        <div class="history-title">ÚLTIMAS VELAS ANALISADAS</div>
+        <div id="history-list" class="history-list">
+            </div>
+    </div>
+
+    <script>
+        // LIGAÇÃO COM O SEU BACKEND NO RENDER
+        const socket = io("https://ia-backend-aviator.onrender.com");
+
+        socket.on("receber_sinal", (dados) => {
+            const container = document.getElementById("main-container");
+            
+            // Atualiza Textos
+            document.getElementById("signal-text").innerText = dados.sinal;
+            document.getElementById("strategy-text").innerText = dados.estrategia || dados.motivo;
+            document.getElementById("prot-val").innerText = dados.protecao || "---";
+            document.getElementById("alvo-val").innerText = dados.alvo || "---";
+            
+            // Atualiza Barra de Confiança
+            const confPercent = dados.confianca ? dados.confianca.replace('%', '') : 0;
+            document.getElementById("conf-bar").style.width = confPercent + "%";
+            document.getElementById("conf-text").innerText = `CONFIANÇA IA: ${confPercent}%`;
+
+            // Atualiza Estilo do Card (Cores do Manual)
+            container.className = ""; // limpa
+            if(dados.cor === "rosa") container.classList.add("card-rosa");
+            if(dados.cor === "roxo") container.classList.add("card-roxo");
+            if(dados.cor === "azul") container.classList.add("card-azul");
+
+            // Som de Alerta para entradas fortes
+            if(confPercent >= 90) {
+                new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play();
+            }
+
+            // Atualiza Histórico Visual
+            const histList = document.getElementById("history-list");
+            histList.innerHTML = "";
+            dados.historicoCurto.forEach(vela => {
+                const item = document.createElement("div");
+                item.className = "history-item";
+                if(vela >= 10) item.classList.add("val-rosa");
+                else if(vela >= 2) item.classList.add("val-roxo");
+                else item.classList.add("val-azul");
+                item.innerText = vela.toFixed(2) + "x";
+                histList.appendChild(item);
+            });
+        });
+    </script>
+</body>
+</html>

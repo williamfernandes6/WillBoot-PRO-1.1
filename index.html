@@ -3,69 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA PREDITOR PREMIUM</title>
+    <title>PREDITOR IA PREMIUM</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        body { 
+            background: #0b0e11; 
+            color: white; 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            text-align: center;
+        }
         
-        /* Card Principal */
-        #main-card { background: #1a1d21; border: 2px solid #2a2e38; padding: 40px 20px; border-radius: 20px; width: 85%; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: 0.5s; }
-        
-        .signal { font-size: 1.8rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
-        .strategy { color: #848689; font-size: 1rem; margin-bottom: 30px; }
-        
-        /* Botão para abrir o jogo */
-        .btn-jogo { background: #d9185c; color: white; text-decoration: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; display: inline-block; margin-top: 20px; box-shadow: 0 4px 15px rgba(217, 24, 92, 0.4); }
+        .container {
+            width: 90%;
+            max-width: 400px;
+            background: #1a1d21;
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid #2a2e38;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
 
-        /* Cores da IA */
-        .rosa { border-color: #ff007a !important; color: #ff007a; }
-        .roxo { border-color: #a020f0 !important; color: #a020f0; }
-        .azul { border-color: #007aff !important; color: #007aff; }
+        .signal-box {
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 15px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #333;
+        }
 
-        #conf-bar { width: 100%; height: 4px; background: #333; margin-top: 20px; border-radius: 2px; }
-        #fill { height: 100%; width: 0%; background: #d9185c; transition: 1s; }
+        .status { font-size: 1.6rem; font-weight: bold; text-transform: uppercase; }
+        .details { color: #848689; font-size: 0.9rem; margin-top: 10px; }
+
+        .btn-play {
+            display: block;
+            background: #d9185c;
+            color: white;
+            text-decoration: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-weight: bold;
+            margin-top: 25px;
+            box-shadow: 0 5px 15px rgba(217, 24, 92, 0.3);
+            font-size: 1.1rem;
+        }
+
+        /* Cores de Alerta */
+        .rosa { color: #ff007a !important; text-shadow: 0 0 15px rgba(255,0,122,0.6); }
+        .roxo { color: #a020f0 !important; }
+        .azul { color: #007aff !important; }
+
+        .loader { width: 100%; height: 5px; background: #333; margin-top: 20px; border-radius: 10px; overflow: hidden; }
+        .fill { height: 100%; width: 0%; background: #d9185c; transition: 1s ease; }
     </style>
 </head>
 <body>
 
-    <div id="main-card">
-        <div id="status-text" class="signal">AGUARDANDO IA...</div>
-        <div id="strategy-text" class="strategy">Conectando ao servidor Render</div>
+    <div id="card" class="container">
+        <h2 style="font-size: 0.8rem; color: #555; letter-spacing: 3px; margin-bottom: 10px;">IA PREDITIVA ATIVA</h2>
         
-        <div id="conf-bar"><div id="fill"></div></div>
+        <div class="signal-box">
+            <div id="status" class="status">SINCRO...</div>
+            <div id="strategy" class="details">A ligar ao Render</div>
+            <div class="loader"><div id="bar" class="fill"></div></div>
+        </div>
 
-        <a href="https://m.elephantbet.co.ao/pt/game/aviator" target="_blank" class="btn-jogo">ABRIR ELEPHANTBET</a>
+        <a href="https://m.elephantbet.co.ao/pt/game/aviator" target="_blank" class="btn-play">JOGAR NA ELEPHANTBET</a>
+        
+        <p style="font-size: 0.65rem; color: #444; margin-top: 20px;">
+            O servidor gratuito pode demorar 50s a processar a primeira vela.
+        </p>
     </div>
+
+    <audio id="alert-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
     <script>
         const socket = io("https://ia-backend-aviator.onrender.com");
+        const audio = document.getElementById("alert-sound");
 
         socket.on("connect", () => {
-            document.getElementById("status-text").innerText = "SISTEMA ONLINE";
-            document.getElementById("strategy-text").innerText = "Aguardando próxima vela";
+            document.getElementById("status").innerText = "ONLINE";
+            document.getElementById("strategy").innerText = "Aguardando sinal da ElephantBet";
         });
 
         socket.on("receber_sinal", (dados) => {
-            const card = document.getElementById("main-card");
-            const status = document.getElementById("status-text");
-            const fill = document.getElementById("fill");
-
-            status.innerText = dados.sinal;
-            document.getElementById("strategy-text").innerText = dados.estrategia || dados.motivo;
+            const statusDiv = document.getElementById("status");
+            const bar = document.getElementById("bar");
             
-            // Aplica cor do sinal ao card
-            card.className = dados.cor;
-            status.className = "signal " + dados.cor;
+            statusDiv.innerText = dados.sinal;
+            statusDiv.className = "status " + dados.cor;
+            document.getElementById("strategy").innerText = dados.estrategia || "Analisando Gráfico";
             
             const conf = parseInt(dados.confianca) || 0;
-            fill.style.width = conf + "%";
+            bar.style.width = conf + "%";
 
-            if(conf >= 90) window.navigator.vibrate([200, 100, 200]);
+            // Se for sinal de Vela Rosa ou Confiança > 90%
+            if(dados.cor === "rosa" || conf >= 90) {
+                audio.play(); // Toca o som de alerta
+                window.navigator.vibrate([300, 100, 300]); // Vibração forte no telemóvel
+            }
         });
 
         socket.on("connect_error", () => {
-            document.getElementById("status-text").innerText = "IA EM STANDBY";
-            document.getElementById("strategy-text").innerText = "O Render está acordando (50s)...";
+            document.getElementById("status").innerText = "A ACORDAR...";
+            document.getElementById("strategy").innerText = "O Render está a ligar a instância Livre.";
         });
     </script>
 </body>

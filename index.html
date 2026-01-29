@@ -1,49 +1,83 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA PREDITOR - ELEPHANTBET</title>
+    <title>Protocolo 2.0 - IA Real-Time</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body { background: #0b0e11; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
-        .container { width: 90%; max-width: 400px; background: #1a1d21; padding: 30px; border-radius: 20px; border: 2px solid #2a2e38; }
-        .status { font-size: 1.6rem; font-weight: bold; margin-bottom: 10px; }
-        .rosa { color: #ff007a; }
-        .btn-play { display: block; background: #d9185c; color: white; text-decoration: none; padding: 18px; border-radius: 12px; font-weight: bold; margin-top: 25px; }
-        .warning { font-size: 0.7rem; color: #ff9800; margin-top: 15px; }
+        body { background-color: #050505; color: #fff; font-family: 'Inter', sans-serif; }
+        .neon-border { border: 1px solid rgba(220, 38, 38, 0.3); box-shadow: 0 0 15px rgba(220, 38, 38, 0.1); }
+        .status-pink { color: #ff007f; text-shadow: 0 0 10px #ff007f; }
+        .status-red { color: #ff4d4d; text-shadow: 0 0 10px #ff4d4d; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div id="status" class="status">SINCRO...</div>
-        <div id="details" style="color: #848689;">Conectando ao Render (Aguarde 50s)</div>
-        
-        <a href="https://www.elephantbet.co.ao/" target="_blank" class="btn-play">ENTRAR NA ELEPHANTBET</a>
-        
-        <p class="warning">Aviso: O sinal demora a aparecer porque o servidor gratuito precisa "acordar" após 50s de espera.</p>
+<body class="flex flex-col items-center justify-center min-h-screen p-6">
+
+    <div class="w-full max-w-4xl text-center mb-10">
+        <h1 class="text-4xl font-black uppercase tracking-widest text-white border-b-2 border-red-600 inline-block px-4">Protocolo Técnico v2.0</h1>
+        <p class="text-gray-500 text-xs mt-4">Motor de Inteligência de Alavancagem - Moeda: AOA</p>
     </div>
 
-    <audio id="alert" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 w-full max-w-6xl">
+        
+        <div class="md:col-span-7 bg-[#0a0a0a] p-6 rounded-2xl neon-border">
+            <h2 class="text-xs font-bold text-gray-500 uppercase mb-4">Entrada de Dados do Sistema</h2>
+            <textarea id="dados" class="w-full h-64 bg-black border border-gray-800 rounded-xl p-4 text-red-500 font-mono text-sm focus:outline-none focus:border-red-600" placeholder="Insira os multiplicadores ou logs aqui..."></textarea>
+            <button onclick="enviar()" class="w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-red-900/20">EXECUTAR ANÁLISE IA</button>
+        </div>
+
+        <div class="md:col-span-5 bg-[#0a0a0a] border-l-4 border-red-600 p-6 rounded-r-2xl flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-6">
+                    <span class="w-2 h-2 bg-red-600 rounded-full animate-ping"></span>
+                    <h3 class="font-black uppercase italic text-lg">IA Real-Time Insights</h3>
+                </div>
+
+                <div id="resultado" class="space-y-6">
+                    <div>
+                        <span class="text-[10px] text-gray-600 font-bold uppercase">Análise Atual</span>
+                        <p id="txt-analise" class="text-gray-300 text-sm mt-1">Aguardando processamento...</p>
+                    </div>
+                    
+                    <div class="p-4 bg-white/5 rounded-lg">
+                        <span class="text-[10px] text-red-500 font-bold uppercase">Estratégia Recomendada</span>
+                        <p id="txt-estrategia" class="text-white text-base font-bold mt-1">--</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="alerta-box" class="mt-6 p-3 border border-gray-800 rounded text-center">
+                <span id="txt-alerta" class="text-[10px] font-bold uppercase tracking-widest text-gray-500 italic">Sistema Standby</span>
+            </div>
+        </div>
+    </div>
 
     <script>
-        const socket = io("https://ia-backend-aviator.onrender.com");
-        const audio = document.getElementById("alert");
+        // SUBSTITUA PELA SUA URL DO RENDER
+        const socket = io('https://seu-backend-no-render.onrender.com');
 
-        socket.on("connect", () => {
-            document.getElementById("status").innerText = "SISTEMA ONLINE";
-            document.getElementById("details").innerText = "Aguardando próxima vela...";
-        });
+        function enviar() {
+            const input = document.getElementById('dados').value;
+            if(input) {
+                document.getElementById('txt-analise').innerText = "Processando Manual 2.0...";
+                socket.emit('input_mercado', input);
+            }
+        }
 
-        socket.on("receber_sinal", (dados) => {
-            const status = document.getElementById("status");
-            status.innerText = dados.sinal;
-            status.className = "status " + dados.cor;
-            document.getElementById("details").innerText = "Confiança: " + dados.confianca;
-            
-            if(dados.cor === "rosa") {
-                audio.play();
-                window.navigator.vibrate([300, 100, 300]);
+        socket.on('output_ia', (data) => {
+            document.getElementById('txt-analise').innerText = data.analise;
+            document.getElementById('txt-estrategia').innerText = data.estrategia;
+            const alerta = document.getElementById('txt-alerta');
+            alerta.innerText = data.alerta;
+
+            if(data.cor === 'pink') {
+                alerta.className = "text-[10px] font-bold uppercase status-pink";
+            } else if(data.cor === 'red') {
+                alerta.className = "text-[10px] font-bold uppercase status-red";
+            } else {
+                alerta.className = "text-[10px] font-bold uppercase text-white";
             }
         });
     </script>

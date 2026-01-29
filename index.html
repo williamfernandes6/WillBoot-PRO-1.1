@@ -2,94 +2,97 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PREDITOR IA - ELEPHANTBET</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IA PREDITOR - ELEPHANTBET</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        /* Reset de tela cheia */
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { height: 100%; width: 100%; background: #000; overflow: hidden; font-family: sans-serif; }
 
-        /* Área do Jogo (ElephantBet) */
-        #game-container {
-            height: 70%; /* Ocupa 70% da tela */
+        /* Frame do Jogo ElephantBet */
+        #game-area {
+            height: 75%; /* Ajustado para mobile */
             width: 100%;
             border: none;
         }
 
-        /* Painel de Sinais IA (Fixo em baixo) */
-        #ia-panel {
-            height: 30%; /* Ocupa 30% da tela */
+        /* Painel de Sinais Profissional */
+        #ia-footer {
+            height: 25%;
             width: 100%;
-            background: #181a21;
-            border-top: 3px solid #d9185c;
+            background: #121417;
+            border-top: 2px solid #d9185c;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
-            box-shadow: 0 -10px 20px rgba(0,0,0,0.5);
+            padding: 10px;
         }
 
-        .status { font-size: 1.3rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; transition: 0.3s; }
-        .strategy { font-size: 0.9rem; color: #848689; margin-bottom: 10px; }
+        .status { font-size: 1.2rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .sub-text { font-size: 0.8rem; color: #848689; margin-top: 4px; }
         
-        /* Cores de Alerta */
-        .rosa { color: #ff007a; text-shadow: 0 0 10px rgba(255,0,122,0.5); }
-        .roxo { color: #a020f0; text-shadow: 0 0 10px rgba(160,32,240,0.5); }
-        .azul { color: #007aff; text-shadow: 0 0 10px rgba(0,122,255,0.5); }
+        /* Cores de Alerta IA */
+        .rosa { color: #ff007a; }
+        .roxo { color: #a020f0; }
+        .azul { color: #007aff; }
 
-        .conf-bar-bg { width: 80%; height: 6px; background: #2a2e38; border-radius: 10px; overflow: hidden; }
-        .conf-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #913dc2, #d9185c); transition: width 1s ease; }
+        .loading-bar {
+            width: 70%;
+            height: 4px;
+            background: #2a2e38;
+            margin-top: 10px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .fill {
+            height: 100%;
+            width: 0%;
+            background: #d9185c;
+            transition: width 0.5s ease;
+        }
     </style>
 </head>
 <body>
 
-    <iframe id="game-container" src="https://www.elephantbet.co.ao"></iframe>
+    <iframe id="game-area" src="https://m.elephantbet.co.ao/pt/game/aviator"></iframe>
 
-    <div id="ia-panel">
-        <div id="signal-text" class="status">CONECTANDO À IA...</div>
-        <div id="strategy-text" class="strategy">Aguardando dados do Render</div>
-        
-        <div class="conf-bar-bg">
-            <div id="conf-bar" class="conf-bar-fill"></div>
-        </div>
-        <div id="conf-val" style="font-size: 0.7rem; margin-top: 5px; color: #555;">Sincronizando...</div>
+    <div id="ia-footer">
+        <div id="signal" class="status">Sincronizando IA...</div>
+        <div id="strategy" class="sub-text">Aguardando dados do Render</div>
+        <div class="loading-bar"><div id="bar-fill" class="fill"></div></div>
     </div>
 
     <script>
-        // CONEXÃO COM O SEU BACKEND NO RENDER
+        // LIGAÇÃO AO TEU RENDER ONLINE
         const socket = io("https://ia-backend-aviator.onrender.com");
 
         socket.on("connect", () => {
-            document.getElementById("signal-text").innerText = "IA ONLINE";
-            document.getElementById("strategy-text").innerText = "Aguardando próxima vela";
+            document.getElementById("signal").innerText = "SISTEMA ONLINE";
+            console.log("Conectado ao Render!");
         });
 
         socket.on("receber_sinal", (dados) => {
-            const signalText = document.getElementById("signal-text");
-            const strategyText = document.getElementById("strategy-text");
-            const confBar = document.getElementById("conf-bar");
-            const confVal = document.getElementById("conf-val");
-
-            // Atualiza Textos e Cores
-            signalText.innerText = dados.sinal;
-            signalText.className = "status " + dados.cor;
-            strategyText.innerText = dados.estrategia || dados.motivo;
+            const signalDiv = document.getElementById("signal");
+            const bar = document.getElementById("bar-fill");
             
-            // Atualiza Barra de Confiança
-            const percent = dados.confianca ? dados.confianca.replace('%', '') : 0;
-            confBar.style.width = percent + "%";
-            confVal.innerText = `CONFIANÇA DA IA: ${percent}%`;
-
-            // Feedback tátil para sinais fortes (95%)
-            if(percent >= 95) {
-                window.navigator.vibrate([200, 100, 200]);
-            }
+            signalDiv.innerText = dados.sinal;
+            signalDiv.className = "status " + dados.cor;
+            document.getElementById("strategy").innerText = dados.estrategia || dados.motivo;
+            
+            // Atualiza barra de confiança
+            const conf = dados.confianca ? parseInt(dados.confianca) : 0;
+            bar.style.width = conf + "%";
+            
+            // Vibração no telemóvel para sinais fortes
+            if(conf >= 90) window.navigator.vibrate([100, 50, 100]);
         });
 
-        socket.on("disconnect", () => {
-            document.getElementById("signal-text").innerText = "IA DESCONECTADA";
-            document.getElementById("signal-text").className = "status";
+        // Se o Render estiver a "dormir", ele avisa aqui
+        socket.on("connect_error", () => {
+            document.getElementById("signal").innerText = "IA A ACORDAR...";
+            document.getElementById("strategy").innerText = "O Render demora até 50s para ligar.";
         });
     </script>
 </body>

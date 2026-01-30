@@ -123,9 +123,14 @@
                 const r = await fetch(`${API_URL}/analisar-fluxo`, { method: 'POST', body: fd });
                 const d = await r.json();
 
-                iaVoz(`Sinal gerado. Alvo em ${d.minX}.`);
+                // LÓGICA DE VOZ INTEGRADA (Minutos e Segundos)
+                if(d.status.includes("PAGO")) {
+                    iaVoz(`Sinal confirmado. Próxima rosa estimada em ${d.timerRosa.split(':')[0]} minutos.`);
+                } else {
+                    iaVoz(`Alerta. ${d.dica}`);
+                }
                 
-                // Update UI
+                // Update UI - INTEGRANDO O TIMER ROSA DO BACKEND
                 document.getElementById('status').innerText = d.status;
                 document.getElementById('status').style.color = d.cor;
                 document.getElementById('res-ia').innerText = `IA: "${d.dica}"`;
@@ -134,7 +139,9 @@
                 document.getElementById('pct').innerText = d.pct;
                 document.getElementById('banca-val').innerText = `Kz ${d.banca.toLocaleString('pt-AO')}`;
                 document.getElementById('gestao-info').innerText = d.gestao;
-                document.getElementById('timer-rosa').innerText = `${d.timerRosa || d.proxRosaMinutos}:00`;
+                
+                // Atualiza o timer com o valor exato vindo da IA (Ex: 05:30)
+                document.getElementById('timer-rosa').innerText = d.timerRosa;
                 
                 // Barómetro
                 const isHigh = d.tendencia === 'alta' || d.tendencia === 'pagador';
@@ -150,7 +157,7 @@
                     chip.innerText = val.toFixed(2) + 'x';
                     grid.appendChild(chip);
                 });
-            } catch (e) { alert("Servidor a iniciar. Tente novamente."); }
+            } catch (e) { alert("Servidor a iniciar. Tente novamente em alguns segundos."); }
         }
 
         async function auditoria(t) {

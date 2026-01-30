@@ -3,74 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PROTOCOLO 2.0 - IA SINAIS</title>
+    <title>PROTOCOLO 2.0 - IA PREDICTOR</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body { background-color: #050505; color: white; }
-        .glow { border: 1px solid rgba(255, 0, 0, 0.2); box-shadow: 0 0 20px rgba(255, 0, 0, 0.05); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; }
+        .neon-border { border: 1px solid rgba(255, 0, 0, 0.3); box-shadow: 0 0 15px rgba(255, 0, 0, 0.1); }
+        .x-chip { font-size: 9px; padding: 4px; border-radius: 4px; text-align: center; font-weight: 900; }
+        .bg-azul { background: #2563eb; } .bg-roxo { background: #9333ea; } .bg-rosa { background: #db2777; }
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-4xl text-center">
-        <h1 class="text-5xl font-black italic tracking-tighter mb-2 italic">PROTOCOLO <span class="text-red-600">2.0</span></h1>
-        <p class="text-gray-600 text-[10px] tracking-[0.4em] uppercase mb-10 font-bold">Inteligência Operacional • Kwanza (AOA)</p>
+    <div class="max-w-3xl w-full space-y-6">
+        <header class="text-center">
+            <h1 class="text-5xl font-black italic tracking-tighter uppercase">Protocolo <span class="text-red-600">2.0</span></h1>
+            <p class="text-[9px] tracking-[0.4em] text-gray-600 uppercase font-bold">Inteligência Operacional • Kwanza (AOA)</p>
+        </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-            <div class="bg-[#0a0a0a] p-6 rounded-3xl glow space-y-4">
-                <textarea id="logs" class="w-full h-32 bg-black border border-gray-800 rounded-2xl p-4 text-sm focus:border-red-600 outline-none" placeholder="Cole os logs do gráfico..."></textarea>
-                
-                <div class="border-2 border-dashed border-gray-800 rounded-2xl p-4 text-center">
-                    <input type="file" id="foto" class="hidden" onchange="analisarImagem()">
-                    <label for="foto" class="cursor-pointer text-xs text-gray-500 uppercase font-bold">Subir Print do Gráfico</label>
-                </div>
-
-                <button onclick="processar()" class="w-full bg-red-600 hover:bg-red-700 py-4 rounded-2xl font-black uppercase tracking-widest transition-all">Gerar Sinal</button>
-            </div>
-
-            <div class="bg-white/5 p-6 rounded-3xl border-l-4 border-red-600 flex flex-col justify-between">
-                <div>
-                    <h3 class="text-red-600 font-bold uppercase text-[10px] mb-4">Insights do Manual</h3>
-                    <div id="box-sinal" class="space-y-4">
-                        <p id="txt-analise" class="text-sm text-gray-400">Aguardando dados...</p>
-                        <p id="txt-dica" class="text-xl font-bold leading-tight">--</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-[#080808] p-5 rounded-3xl border border-gray-900 flex flex-col justify-between">
+                <h3 class="text-[10px] text-red-600 font-bold uppercase mb-4 tracking-widest">Gestão de Banca</h3>
+                <div class="space-y-4">
+                    <input type="number" id="banca" class="w-full bg-transparent border-b border-gray-800 p-2 text-xl font-bold outline-none" value="10000">
+                    <div class="bg-white/5 p-4 rounded-2xl">
+                        <p class="text-[9px] text-gray-500 uppercase">Entrada Recomendada (5%)</p>
+                        <p id="entrada" class="text-xl font-black text-white">Kz 500,00</p>
                     </div>
                 </div>
-                <div class="mt-6 pt-4 border-t border-white/5 text-[9px] text-gray-700 font-mono flex justify-between">
-                    <span>STATUS: ONLINE</span>
-                    <span>MOEDA: AOA</span>
+            </div>
+
+            <div class="md:col-span-2 bg-[#080808] p-6 rounded-3xl neon-border flex flex-col justify-between min-h-[250px]">
+                <div class="flex justify-between items-start">
+                    <div class="max-w-[70%]">
+                        <h2 id="status" class="text-2xl font-black italic uppercase text-gray-800">Aguardando...</h2>
+                        <p id="dica" class="text-[10px] text-gray-500 mt-2 font-mono leading-relaxed">Carregue o print do histórico para ativar o algoritmo.</p>
+                    </div>
+                    <div class="text-right">
+                        <span id="pct" class="text-4xl font-black text-white opacity-20">0%</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 mt-8">
+                    <div class="flex-1 bg-black/50 p-4 rounded-2xl border border-gray-900 text-center">
+                        <p class="text-[8px] text-gray-600 uppercase mb-1">Próxima Janela</p>
+                        <p id="timer" class="text-2xl font-black text-red-600">00:00</p>
+                    </div>
+                    <input type="file" id="file" class="hidden" onchange="analisar()">
+                    <label for="file" class="flex-1 bg-red-600 hover:bg-red-700 py-5 rounded-2xl text-center font-black uppercase cursor-pointer transition-all shadow-lg shadow-red-900/40">Analisar Gráfico</label>
                 </div>
             </div>
+        </div>
+
+        <div class="bg-[#080808] p-5 rounded-3xl border border-gray-900">
+            <p class="text-[9px] text-gray-600 font-bold uppercase mb-4 italic">Histórico Analisado (25x)</p>
+            <div id="grid" class="grid grid-cols-5 md:grid-cols-10 gap-2">
+                </div>
         </div>
     </div>
 
     <script>
-        // COLOQUE O SEU LINK DO RENDER AQUI
-        const URL_BACKEND = 'https://O-TEU-APP.onrender.com'; 
-        const socket = io(URL_BACKEND);
+        // TEU NOVO LINK DO RENDER JÁ INTEGRADO
+        const URL_API = 'https://ia-backend-aviator-1.onrender.com';
 
-        async function analisarImagem() {
-            const file = document.getElementById('foto').files[0];
+        // Atualização automática da Gestão de Banca
+        document.getElementById('banca').addEventListener('input', (e) => {
+            const val = e.target.value * 0.05;
+            document.getElementById('entrada').innerText = `Kz ${val.toLocaleString('pt-AO')}`;
+        });
+
+        async function analisar() {
+            const file = document.getElementById('file').files[0];
+            if (!file) return;
+
             const formData = new FormData();
             formData.append('print', file);
 
-            document.getElementById('txt-analise').innerText = "IA lendo imagem...";
+            document.getElementById('status').innerText = "IA ANALISANDO...";
+            document.getElementById('status').style.color = "#444";
+
+            try {
+                const res = await fetch(`${URL_API}/analisar-fluxo`, { 
+                    method: 'POST', 
+                    body: formData 
+                });
+                const data = await res.json();
+
+                // Atualizar Interface com Resposta da IA
+                const status = document.getElementById('status');
+                status.innerText = data.status;
+                status.style.color = data.cor;
+                
+                document.getElementById('dica').innerText = data.dica;
+                document.getElementById('pct').innerText = data.pct;
+                document.getElementById('pct').style.opacity = "1";
+                
+                startTimer(data.timer);
+                renderHistorico(data.historico);
+            } catch (e) { 
+                alert("Erro: O servidor Render pode estar a 'acordar'. Tenta novamente em 30 segundos."); 
+            }
+        }
+
+        function startTimer(sec) {
+            let t = sec;
+            const disp = document.getElementById('timer');
+            // Limpa timers anteriores se existirem
+            if (window.activeTimer) clearInterval(window.activeTimer);
             
-            const res = await fetch(`${URL_BACKEND}/analisar-print`, { method: 'POST', body: formData });
-            const data = await res.json();
-            document.getElementById('txt-analise').innerText = data.resultado;
+            window.activeTimer = setInterval(() => {
+                let m = Math.floor(t / 60);
+                let s = t % 60;
+                disp.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+                if (--t < 0) { 
+                    clearInterval(window.activeTimer); 
+                    disp.innerText = "AGORA!"; 
+                    disp.classList.add("animate-pulse");
+                }
+            }, 1000);
         }
 
-        function processar() {
-            const val = document.getElementById('logs').value;
-            if(val) socket.emit('enviar_dados', val);
+        function renderHistorico(lista) {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            lista.forEach(val => {
+                const chip = document.createElement('div');
+                chip.className = `x-chip ${val < 2 ? 'bg-azul' : val < 10 ? 'bg-roxo' : 'bg-rosa'}`;
+                chip.innerText = val.toFixed(2) + 'x';
+                grid.appendChild(chip);
+            });
         }
-
-        socket.on('receber_estrategia', (data) => {
-            document.getElementById('txt-analise').innerText = data.estrategia;
-            document.getElementById('txt-dica').innerText = data.dica;
-        });
     </script>
 </body>
 </html>
